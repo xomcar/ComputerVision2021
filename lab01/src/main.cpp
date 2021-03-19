@@ -32,7 +32,7 @@ int main(int argc, char** argv) {
     }
     cv::Mat hsv_image = bgr_image.clone();
     cv::cvtColor(bgr_image, hsv_image, cv::COLOR_BGR2HSV);
-    cv::setMouseCallback(WINDOW, leftClick, &px);
+    cv::setMouseCallback(WINDOW, click, &px);
     std::cout << "Image is " << bgr_image.cols << "x" << bgr_image.rows << "px" << std::endl;
     std::cout << "Right click to sample color, average BGR using " << SIDE << "x" << SIDE << " square\n"
               << "and apply BGR threshold of " << BRG_THRESHOLD << std::endl;

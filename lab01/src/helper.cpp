@@ -13,7 +13,7 @@ int loadImageFromDisk(const std::string& path, const std::string& window_name, c
     return 0;
 }
 
-void leftClick(int event, int x, int y, int f, void* data) {
+void click(int event, int x, int y, int f, void* data) {
     if (event == cv::EVENT_LBUTTONDOWN) {
         auto px = static_cast<bPixel*>(data);
         px->x = x;
@@ -49,14 +49,14 @@ cv::Vec3b getMean(int side, int x, int y, const cv::Mat& img) {
     return mean;
 }
 
-cv::Mat thresholdingBRG(const cv::Vec3b& mean_color, const cv::Vec3b& new_color, const cv::Vec3b& threshold, const cv::Mat& src_img, int masksize) {
+cv::Mat thresholdingBRG(const cv::Vec3b& mean_color, const cv::Vec3b& new_color, const cv::Vec3b& threshold, const cv::Mat& src_img, int mask_size) {
     cv::Mat out_img = src_img.clone();
     cv::Mat mask;
     cv::Scalar min = cv::Scalar(mean_color[0] - threshold[0], mean_color[1] - threshold[1], mean_color[2] - threshold[2]);
     cv::Scalar max = cv::Scalar(mean_color[0] + threshold[0], mean_color[1] + threshold[1], mean_color[2] + threshold[2]);
     cv::inRange(src_img, min, max, mask);
     int nonzero = cv::countNonZero(mask);
-    if (nonzero < 0.3 * masksize || nonzero > masksize) return cv::Mat{};
+    if (nonzero < 0.3 * mask_size || nonzero > mask_size) return cv::Mat{};
     cv::Mat area = cv::Mat(src_img.size(), src_img.type(), cv::Scalar(new_color));
     cv::add(area, out_img, out_img, mask);
     return out_img;

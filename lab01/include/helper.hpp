@@ -20,7 +20,7 @@ struct pixel {
 typedef struct pixel bPixel;
 
 int loadImageFromDisk(const std::string& path, const std::string& window_name, cv::Mat& img_buffer, float scale);
-void leftClick(int event, int x, int y, int f, void* data);
+void click(int event, int x, int y, int f, void* data);
 bool checkBoundaries(int x, int y, int side, const cv::Mat& img);
 cv::Vec3b getMean(int side, int x, int y, const cv::Mat& img);
 cv::Mat thresholdingBRG(const cv::Vec3b& mean_color, const cv::Vec3b& new_color, const cv::Vec3b& threshold, const cv::Mat& src_img, int mask_size);
