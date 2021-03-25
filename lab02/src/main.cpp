@@ -4,10 +4,8 @@
 
 #include <iostream>
 #include <vector>
-#include <thread>
 #include <future>
 #include <opencv2/highgui.hpp>
-#include <queue>
 
 #include "helper.hpp"
 
@@ -42,7 +40,13 @@ int main(int argc, char** argv) {
               << "Corners by column: " << corn_col << std::endl
               << "Side length (m) : " << side << std::endl;
     std::vector<cv::String> og_names;
-    cv::glob("test/", og_names);
+    try {
+        cv::glob("test/*.png", og_names);
+    } catch (std::exception e){
+        std::cout << "Could not find folder test\n";
+        return 1;
+    }
+
     cv::Mat original = cv::imread(og_names[0]);
     if (original.empty()) {
         std::cout << "Invalid test image for rectification, must be placed in \"test/\" folder!\n";
@@ -50,11 +54,12 @@ int main(int argc, char** argv) {
     } else {
         std::cout << "Loaded " << og_names[0] << " for future rectification\n";
     }
-    // Loading images and computing corners
+
+    // Loading images
     cv::Size pattern_size(corn_row, corn_col);
     std::vector<cv::String> file_names;
     std::cout << "Scanning executable directory for images" << std::endl;
-    cv::glob("", file_names);
+    cv::glob("*.png", file_names);
     auto n_images = file_names.size();
     std::cout << "Found " << n_images << " images" << std::endl;
     if (!n_images) {
@@ -63,28 +68,32 @@ int main(int argc, char** argv) {
     }
     auto img_size = cv::imread(file_names[0], cv::IMREAD_GRAYSCALE).size();
     std::vector<std::vector<cv::Point2f>> corners(n_images);
-    std::vector<cv::Mat> images(n_images);
-    std::queue<std::thread> threads;
+    std::vector<std::future<int>> futures(n_images);
+
+    // Scanning and launching async computing
     int idx = 0;
     for (const auto &file : file_names) {
-        cv::Mat image = cv::imread(file, cv::IMREAD_GRAYSCALE);
+        cv::Mat image = imread(file, cv::IMREAD_GRAYSCALE);
         std::cout << "Loaded image " << file << std::endl;
-        auto t = std::thread(findCorners, image, std::ref(corners[idx]), pattern_size);
-        threads.push(std::move(t));
-        images[idx] = cv::imread(file, cv::IMREAD_COLOR);
+        futures[idx] = std::async(std::launch::async, findCorners, image, std::ref(corners[idx]), pattern_size);
         idx++;
     }
+
+    //Waiting for corners computing
     std::cout << "Computing corners, please wait!" << std::endl;
-    while (!threads.empty()) {
-        auto& t = threads.front();
-        if (t.joinable()) {
-            t.join();
-            threads.pop();
+    while (true) {
+        cv::waitKey(500);
+        for (auto& c : futures) {
+            if (c.valid()) {
+                c.get();
+                idx--;
+            }
         }
+        if (!idx) break;
     }
-    std::cout << "Computing done, calibrating camera..." << std::endl;
 
     //Actual camera calibration
+    std::cout << "Computing done, calibrating camera..." << std::endl;
     std::vector<std::vector<cv::Point3f>> obj_points(n_images, createChessboard(pattern_size, side));
     cv::Mat camera_matrix, dist_coefficients;
     std::vector<cv::Mat> R_mats, T_mats;
@@ -104,11 +113,11 @@ int main(int argc, char** argv) {
     std::cout << "Undistorting " << og_names[0] << " with newfound parameters...\n";
     cv::Mat rectified, comparison;
     cv::undistort(original, rectified, camera_matrix, dist_coefficients);
-    std::cout << "Done! Displaying...\n";
+    std::cout << "Done! Close the window to exit...\n";
     cv::hconcat(original, rectified, comparison);
     cv::namedWindow("Comparison", cv::WINDOW_NORMAL);
-    cv::imshow("Comparison", comparison);
     cv::resizeWindow("Comparison", cv::Size(0.4 * comparison.cols,0.4 * comparison.rows));
+    cv::imshow("Comparison", comparison);
     while(true) {
         cv::waitKey(1000);
         if (cv::getWindowProperty("Comparison", cv::WND_PROP_AUTOSIZE) == -1) {
