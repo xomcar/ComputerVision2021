@@ -7,9 +7,12 @@
 
 #include <opencv2/core.hpp>
 #include <opencv2/calib3d.hpp>
+#include <iostream>
 
-int findCorners(const cv::Mat& img, std::vector<cv::Point2f>& corners, const cv::Size& size);
-std::vector<cv::Point3f> createChessboard(const cv::Size& pattern_size, int side_length);
-std::vector<cv::Point2f> createChessboard2D(const cv::Size& pattern_size, int side_length);
+int findCorners(cv::Mat& img, std::vector<cv::Point2f>& corners, cv::Size& size);
+std::vector<cv::Point3f> createChessboard(cv::Size& pattern_size, double side_length);
+int argmin(const std::vector<double>& v);
+int argmax(const std::vector<double>& v);
+void printCameraMatrixInfo(const cv::Mat& camera);
 
 #endif //LAB02_HELPER_H
