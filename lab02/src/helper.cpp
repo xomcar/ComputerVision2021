@@ -44,7 +44,7 @@ void printCameraMatrixInfo(const cv::Mat& camera) {
     std::cout << "Intrinsic camera matrix:\n"
         << camera << std::endl
         << "Focal length (x) = " << f_len_x << std::endl
-        << "Focal length (y) =" << f_len_y << std::endl
+        << "Focal length (y) = " << f_len_y << std::endl
         << "Principal point = (" << p_point_x << "," << p_point_y << ")\n";
 }
 
