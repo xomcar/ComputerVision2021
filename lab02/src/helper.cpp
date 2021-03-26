@@ -37,5 +37,26 @@ int argmax(const std::vector<double>& v) {
 }
 
 void printCameraMatrixInfo(const cv::Mat& camera) {
+    auto f_len_x = camera.at<double>(0,0);
+    auto f_len_y = camera.at<double>(1,1);
+    auto p_point_x = camera.at<double>(0,2);
+    auto p_point_y = camera.at<double>(1,2);
+    std::cout << "Intrinsic camera matrix:\n"
+        << camera << std::endl
+        << "Focal length (x) = " << f_len_x << std::endl
+        << "Focal length (y) =" << f_len_y << std::endl
+        << "Principal point = (" << p_point_x << "," << p_point_y << ")\n";
+}
 
+void printDistCoeffInfo(const cv::Mat& coeffs) {
+    std::cout << "Distortion coefficients:\n" << coeffs << std::endl;
+    if (coeffs.size[1] >= 5) {
+        std::cout << "Radial distortion coefficients:\n"
+            << "\tk_1 = " << coeffs.at<double>(0) << std::endl
+            << "\tk_2 = " << coeffs.at<double>(1) << std::endl
+            << "\tk_3 = " << coeffs.at<double>(4) << std::endl
+            << "Tangential distortion coefficients:\n"
+            << "\tp_1 = " << coeffs.at<double>(2) << std::endl
+            << "\tp_2 = " << coeffs.at<double>(3) << std::endl;
+    }
 }

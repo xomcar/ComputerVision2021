@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
     } else if (argc == 4) {
         corn_row = std::atoi(argv[1]);
         corn_col = std::atoi(argv[2]);
-        side = std::atof(argv[3]);
+        side = std::atof(argv[3]) / 100.0;
         if (!corn_row || !corn_col || !side) {
             std::cout << "Invalid input arguments!" << std::endl;
             return 1;
@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
 
     cv::Mat original = cv::imread(og_names[0]);
     if (original.empty()) {
-        std::cout << "Invalid test image for rectification, must be placed in \"test/\" folder!\n";
+        std::cout << "Invalid test image for rectification, .png must be placed in \"test/\" folder!\n";
         return 1;
     } else {
         std::cout << "Loaded " << og_names[0] << " for future rectification\n";
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     // Loading images
     cv::Size pattern_size(corn_row, corn_col);
     std::vector<cv::String> file_names;
-    std::cout << "Scanning executable directory for images" << std::endl;
+    std::cout << "Scanning executable directory for .png images..." << std::endl;
     cv::glob("*.png", file_names);
     auto n_images = file_names.size();
     std::cout << "Found " << n_images << " images" << std::endl;
@@ -102,12 +102,13 @@ int main(int argc, char** argv) {
                                           R_mats, T_mats, cv::noArray(), cv::noArray(), per_view_errors);
     std::cout << "Mean reprojection error: " << mean_error << std::endl;
     printCameraMatrixInfo(camera_matrix);
+    printDistCoeffInfo(dist_coefficients);
 
     // Finding best and worst results
     auto idx_min = argmin(per_view_errors);
     auto idx_max = argmax(per_view_errors);
-    std::cout << "Best image: " << file_names[idx_min] << " with error " << per_view_errors[idx_min] << std::endl;
-    std::cout << "Worst image: " << file_names[idx_max] << " with error " << per_view_errors[idx_max] << std::endl;
+    std::cout << "Best image: " << file_names[idx_min] << " with error " << per_view_errors[idx_min] << "%\n";
+    std::cout << "Worst image: " << file_names[idx_max] << " with error " << per_view_errors[idx_max]  << "%\n";
 
     // Creating undistorted image
     std::cout << "Undistorting " << og_names[0] << " with newfound parameters...\n";

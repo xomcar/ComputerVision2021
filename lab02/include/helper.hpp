@@ -14,5 +14,6 @@ std::vector<cv::Point3f> createChessboard(cv::Size& pattern_size, double side_le
 int argmin(const std::vector<double>& v);
 int argmax(const std::vector<double>& v);
 void printCameraMatrixInfo(const cv::Mat& camera);
+void printDistCoeffInfo(const cv::Mat& coeffs);
 
 #endif //LAB02_HELPER_H
