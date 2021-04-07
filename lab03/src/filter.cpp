@@ -1,47 +1,76 @@
-#include <opencv2/core.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
 #include "filter.h"
 
-//using namespace cv;
+// constructor
+Filter::Filter(cv::Mat input_img, int size) {
 
-	// constructor
-	Filter::Filter(cv::Mat input_img, int size) {
+    input_image = input_img;
+    if (size % 2 == 0)
+        size++;
+    filter_size = size;
+}
 
-		input_image = input_img;
-		if (size % 2 == 0)
-			size++;
-		filter_size = size;
-	}
+// for base class do nothing (in derived classes it performs the corresponding filter)
+void Filter::doFilter() {
 
-	// for base class do nothing (in derived classes it performs the corresponding filter)
-	void Filter::doFilter() {
+    // it just returns a copy of the input image
+    result_image = input_image.clone();
+    std::cout << "cloned\n";
+}
 
-		// it just returns a copy of the input image
-		result_image = input_image.clone();
+// get output of the filter
+cv::Mat Filter::getResult() {
 
-	}
+    return result_image;
+}
 
-	// get output of the filter
-	cv::Mat Filter::getResult() {
+//set window size (it needs to be odd)
+void Filter::setSize(int size) {
 
-		return result_image;
-	}
+    if (size % 2 == 0)
+        size++;
+    filter_size = size;
+}
 
-	//set window size (it needs to be odd)
-	void Filter::setSize(int size) {
+//get window size
+int Filter::getSize() {
+    return filter_size;
+}
 
-		if (size % 2 == 0)
-			size++;
-		filter_size = size;
-	}
+// Write your code to implement the Gaussian, median and bilateral filters
 
-	//get window size 
-	int Filter::getSize() {
+MedianFilter::MedianFilter(cv::Mat img, int size) : Filter(img, size) {}
+void MedianFilter::doFilter() {
+    cv::medianBlur(this->input_image, this->result_image, this->filter_size);
+    //cv::imshow("Test", result_image);
+    //std::cout << "Applied median filter with size " << filter_size << std::endl;
+}
 
-		return filter_size;
-	}
+GaussianFilter::GaussianFilter(cv::Mat img, int size, int sigma) : Filter(img, size) {
+    setSigma(sigma);
+}
+void GaussianFilter::setSigma(int sigma) {
+    this->sigma = sigma;
+}
+void GaussianFilter::doFilter() {
+    cv::GaussianBlur(this->input_image, this->result_image,
+                     cv::Size(this->filter_size, this->filter_size), this->sigma, this->sigma);
+    //std::cout << "Applied Gaussian filter with sigma " << this->sigma << std::endl;
+}
 
+BilateralFilter::BilateralFilter(cv::Mat img, int size, int sigma_range, int sigma_space) : Filter(img, size){
+    setSigmaRange(sigma_range);
+    setSigmaSpace(sigma_space);
+}
+void BilateralFilter::doFilter() {
+    cv::bilateralFilter(this->input_image, this->result_image,
+                        7, this->sigma_range, this->sigma_space);
+    //std::cout << "Applied Bilateral filter\n";
+}
 
+void BilateralFilter::setSigmaSpace(int sigma_space) {
+    this->sigma_space = sigma_space;
+}
 
-	// Write your code to implement the Gaussian, median and bilateral filters
+void BilateralFilter::setSigmaRange(int sigma_range) {
+    this->sigma_range = sigma_range;
+}
