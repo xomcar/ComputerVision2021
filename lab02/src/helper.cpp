@@ -3,6 +3,7 @@
 //
 
 #include "helper.hpp"
+#include <opencv2/imgproc.hpp>
 
 int findCorners(cv::Mat& img, std::vector<cv::Point2f>& corners, cv::Size& size) {
     bool res = cv::findChessboardCorners(img, size, corners,
@@ -12,7 +13,8 @@ int findCorners(cv::Mat& img, std::vector<cv::Point2f>& corners, cv::Size& size)
     if (!res) {
         return 0;
     } else {
-        cv::find4QuadCornerSubpix(img, corners, cv::Size(11,11));
+        auto criteria = cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 40, 0.001);
+        cv::cornerSubPix(img, corners, cv::Size(5,5), cv::Size( -1, -1 ), criteria);
         return corners.size();
     }
 }

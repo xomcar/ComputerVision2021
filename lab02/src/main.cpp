@@ -107,8 +107,8 @@ int main(int argc, char** argv) {
     // Finding best and worst results
     auto idx_min = argmin(per_view_errors);
     auto idx_max = argmax(per_view_errors);
-    std::cout << "Best image: " << file_names[idx_min] << " with error " << per_view_errors[idx_min] << "%\n";
-    std::cout << "Worst image: " << file_names[idx_max] << " with error " << per_view_errors[idx_max]  << "%\n";
+    std::cout << "Best image: " << file_names[idx_min] << " with error " << per_view_errors[idx_min] << std::endl;
+    std::cout << "Worst image: " << file_names[idx_max] << " with error " << per_view_errors[idx_max]  << std::endl;
 
     // Creating undistorted image
     std::cout << "Undistorting " << og_names[0] << " with newfound parameters...\n";
