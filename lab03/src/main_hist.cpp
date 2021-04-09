@@ -11,7 +11,7 @@ int main() {
     std::vector<cv::String> filenames;
     cv::glob("*.jpg", filenames);
     if (filenames.empty()) {
-        std::cout << "No images found. Exiting...\n";
+        std::cout << "No jpg images found. Exiting...\n";
         return 1;
     }
     std::cout << "Images found:\n";
@@ -81,6 +81,7 @@ int main() {
             cv::getWindowProperty(hsv_hist_win, cv::WND_PROP_AUTOSIZE) == -1 ||
             cv::getWindowProperty(rgb_hist_win, cv::WND_PROP_AUTOSIZE) == -1) {
             std::cout << "Exiting..." << std::endl;
+            cv::imwrite("filtered.jpg", hsv_eq_img);
             return 0;
         }
     }

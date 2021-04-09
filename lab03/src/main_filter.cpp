@@ -11,7 +11,7 @@
 
 int main(int argc, char** args) {
     if (argc == 1) {
-        std::cout << "Usage: executable.ext image.jpg\n";
+        std::cout << "Usage: executable image.jpg\n";
         return 1;
     }
     cv::Mat src_img = cv::imread(args[1]);
@@ -22,19 +22,18 @@ int main(int argc, char** args) {
     cv::String filters[] = {"Median Filter", "Gaussian Filter", "Bilateral Filter"};
     while (true) {
         std::cout << "Select which filter to apply:\n" <<
-            "[0] - Median\n[1] - Gaussian\n[2] - Bilateral\n";
+            "[0] - Median\n[1] - Gaussian\n[2] - Bilateral\n[Q] - Exit\n";
         int selection;
         while (true) {
             std::cin >> selection;
             if (!std::cin) {
-                std::cout << "Invalid input. Insert an integer value!\n";
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                continue;
+                std::cout << "Exiting...\n";
+                return 0;
             } else if (selection < 0 || selection > 2) {
                 std::cout << "Insert a value within the listed ones!\n";
             } else {
-                std::cout << "Selected [" << filters[selection] << "]\n";
+                std::cout << "Selected [" << filters[selection] << "]\n" <<
+                    "Close the window to select another filter.\n";
                 break;
             }
         }
