@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.17)
+project(lab05)
+set(CMAKE_CXX_STANDARD 14)
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS} include)
+add_executable(lab05 src/main.cpp)
+target_link_libraries(lab05 ${OpenCV_LIBS})

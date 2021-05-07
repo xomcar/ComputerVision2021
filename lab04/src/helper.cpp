@@ -79,6 +79,8 @@ void Detector::compute() {
         lines.clear();
         lines_img = og_img_color.clone();
         cv::HoughLines(canny_img.clone(), lines, rho, theta, threshold);
+        std::cout << "Rho_res:" << rho << "\tTheta_res (rad):" << theta <<
+        "deg\tThreshold:" << threshold << "\tLines:" << lines.size() << std::endl;
         for (auto line : lines) {
             drawLine(lines_img, line[0], line[1], 1000, cv::Scalar(0, 0, 255));
         }
@@ -97,8 +99,8 @@ void Detector::compute() {
         GaussianBlur(og_img_bw.clone(), temp_img, cv::Size(5, 5), 1.5, 1.5);
         cv::HoughCircles(temp_img.clone(), circles, cv::HOUGH_GRADIENT, accumulator,
                          min_dist, param1, param2, 2, 100);
-        std::cout << "MinD:" << min_dist << " Dp:" << accumulator <<
-        " P1:" << param1 << " P2:" << param2 << " Circles:" << circles.size() << std::endl;
+        std::cout << "Min_distance:" << min_dist << "\tAccumulator_res:" << accumulator <<
+        "\tP1:" << param1 << "\tP2:" << param2 << "\tCircles:" << circles.size() << std::endl;
         for (auto circle : circles) {
             drawCircle(circles_img, cv::Point(cvRound(circle[0]),cvRound(circle[1])),
                        circle[2], cv::Scalar(0,255,0));

@@ -3,9 +3,18 @@
 //
 
 #include "helper.h"
+#include <iostream>
 
-int main() {
-    auto img = cv::imread("input.png");
+int main(int argc, char** args) {
+    if (argc == 1) {
+        std::cout << "Usage: executable image.jpg\n";
+        return 1;
+    }
+    cv::Mat img = cv::imread(args[1]);
+    if (img.empty()) {
+        std::cout << "Invalid image file\n";
+        return 1;
+    }
     auto win_n = "Test";
     Detector d(img, win_n);
     d.startCannyWindow();

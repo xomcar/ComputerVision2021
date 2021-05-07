@@ -21,12 +21,14 @@ public:
     void startCannyWindow(); //creates canny window and sets trackbars
     void startLinesWindow(); //creates hlines window and sets trackbars
     void startCirclesWindow(); //creates hcircles window and sets trackbars
-    void compute(); //computes search;
     void updateWindow(); //updates window components
-    void drawStreet(); //draws street triangle
-    void drawSign(); //draws street sign
     cv::Mat getFinalResult();
 private:
+    // Private functions
+    void compute(); //computes search;
+    void drawStreet(); //draws street triangle
+    void drawSign(); //draws street sign
+
     // Main storing variables
     cv::Mat og_img_color, og_img_bw, final_img;
     cv::Mat lines_img, canny_img, temp_img, circles_img;
@@ -55,6 +57,7 @@ private:
         param1_bar = "p1",
         param2_bar = "p2";
 
+    // Max parameters for trackbars
     int max_blur = 3, max_T1 = 800, max_T2 = max_T1 + 200, max_sobel = 3;
     double max_rho = 3, max_theta = 3, max_threshold = 500;
     double max_acc = 10, max_min_dist = 50, max_par1 = 50, max_par2 = 20;
@@ -85,9 +88,10 @@ private:
     static void onChangeParam1(int, void*);
     static void onChangeParam2(int, void*);
     static void onChangeMinDist(int, void*);
+
     // Utility functions
-    static void drawCircle(cv::Mat& img, cv::Point center, double radius, cv::Scalar color);
-    static void drawLine(cv::Mat& img, double rho, double theta, double delta, cv::Scalar color); //draw lines on an image
+    static void drawCircle(cv::Mat& img, cv::Point center, double radius, cv::Scalar color); //draw a circle on an image
+    static void drawLine(cv::Mat& img, double rho, double theta, double delta, cv::Scalar color); //draw a line on an image
     static cv::Vec2f getParam(cv::Point p1, cv::Point p2); //computes m and b of line from two points
     static cv::Point findIntersect(cv::Vec3f line1, cv::Vec3f line2); //find intersection point of lines
     static void getPoints(double rho, double theta, cv::Point *points, double delta); //get points from rho and theta

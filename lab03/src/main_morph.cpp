@@ -7,9 +7,17 @@
 
 void onChange(int, void*);
 
-int main() {
+int main(int argc, char** args) {
     cv::String win_name = "Closing demo";
-    cv::Mat src_img = cv::imread("filtered.jpg", cv::IMREAD_GRAYSCALE);
+    if (argc == 1) {
+        std::cout << "Usage: executable image.jpg\n";
+        return 1;
+    }
+    cv::Mat src_img = cv::imread(args[1], cv::IMREAD_GRAYSCALE);
+    if (src_img.empty()) {
+        std::cout << "Invalid image file\n";
+        return 1;
+    }
     cv::namedWindow(win_name, cv::WINDOW_GUI_NORMAL);
     cv::Mat closed_img = src_img.clone();
     cv::Mat comp;

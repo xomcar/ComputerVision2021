@@ -19,4 +19,3 @@ Create a C++ program, preferably organized in a class, that:
    c. Color in red all the pixels between the lines.
 3. Colors in green the pixels belonging to the round street sign using the same suggestions in 2.
    The function to compute the circles is cv::HoughCircles()
-
