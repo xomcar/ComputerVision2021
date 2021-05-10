@@ -2,7 +2,7 @@
 // Created by Marco on 04/05/2021.
 //
 #include <opencv2/core.hpp>
-#include "ObjectTracker.h"
+#include "ObjectTracker_bad.h"
 #include <iostream>
 
 int main() {
@@ -11,7 +11,7 @@ int main() {
     std::vector<cv::Mat> objects;
     std::vector<cv::String> filenames;
     cv::glob("camera/*.jpg", filenames, false);
-    std::vector<ObjectTracker> trackers;
+    std::vector<ObjectTracker_bad> trackers;
 
     captureObj.open(1, 0);
     if (!captureObj.isOpened()) {

@@ -9,46 +9,54 @@
 #include <ObjectTracker.h>
 
 int main(int argc, char** argv) {
+    cv::RNG rng(124);
     cv::Mat curr_frame;
-    cv::VideoCapture captureObj("video.mov");
+    cv::VideoCapture captureObj("video.mp4");
     std::vector<cv::String> filenames;
     cv::glob("objects/*.png", filenames, false);
-    std::vector<cv::Mat> objects;
     std::vector<ObjectTracker> trackers;
 
+    // Read first frame of video
     captureObj.read(curr_frame);
     if (curr_frame.empty()) {
         std::cerr << "Blank frame_bw grabbed\n";
         return 1;
     }
+    cv::Mat curr_frame_bw;
+    cv::cvtColor(curr_frame, curr_frame_bw, cv::COLOR_RGB2GRAY);
 
+    // Detect keypoints on frame
     std::vector<cv::KeyPoint> frame_keys;
     cv::Mat frame_desc;
     auto frame_det = cv::SIFT::create();
     frame_det->detectAndCompute(curr_frame, cv::noArray(), frame_keys, frame_desc);
 
+    // Create trackers for each object
     for (const auto& file : filenames) {
-        cv::Mat curr_img = cv::imread(file, cv::IMREAD_COLOR);
-        if (curr_img.empty()) {
+        // Read image in bw
+        cv::Mat obj_bw = cv::imread(file, cv::IMREAD_GRAYSCALE);
+        if (obj_bw.empty()) {
             std::cerr << "Failed to load image " << file << std::endl;
             return 1;
         }
-        objects.push_back(curr_img.clone());
-        trackers.emplace_back(curr_img, &frame_desc, &frame_keys, 0.5);
-        std::cout << "Loaded image " << file << " as tracking object" << std::endl;
+        // Create random color
+        auto color = cv::Scalar(rng.uniform(0,255),
+                                rng.uniform(0, 255), rng.uniform(0, 255));
+        // Create tracker for object
+        trackers.emplace_back(obj_bw, curr_frame_bw, &frame_desc, &frame_keys, color);
+        std::cout << "Loaded image " << file << ", now detecting..." << std::endl;
     }
 
-    int idx = 0;
     cv::Mat display = curr_frame.clone();
     for (auto& tracker : trackers) {
-        std::cout << "Computing matches for " << filenames[idx++] << std::endl;
-        display = tracker.drawRectangle(display);
+        tracker.draw(display);
     }
     cv::namedWindow("Detected", cv::WINDOW_NORMAL);
     cv::resizeWindow("Detected", 1280, 720);
     cv::imshow("Detected", display);
     cv::waitKey();
     cv::destroyAllWindows();
+
     captureObj.release();
     return 0;
 }
