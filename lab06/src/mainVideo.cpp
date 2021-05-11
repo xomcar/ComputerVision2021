@@ -2,6 +2,8 @@
 // Created by Marco on 04/05/2021.
 //
 
+#include <thread>
+#include <queue>
 #include <opencv2/core.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/highgui.hpp>
@@ -52,8 +54,13 @@ int main(int argc, char** argv) {
             break;
         display = next_frame.clone();
         cv::cvtColor(next_frame, next_frame_bw, cv::COLOR_BGR2GRAY);
+        auto q = std::queue<std::thread>();
         for (auto& tracker : trackers) {
-            tracker.track(next_frame_bw, display);
+            q.emplace(std::thread(&ObjectTracker::track, &tracker, next_frame_bw, display));
+        }
+        while (!q.empty()) {
+            q.front().join();
+            q.pop();
         }
         cv::imshow("Feed", display);
         if (cv::waitKey(5) >= 0)

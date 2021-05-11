@@ -25,7 +25,7 @@ void ObjectTracker::track(const cv::Mat &next_frame_bw, cv::Mat &output_image) {
         purgeMatches();
         need_detect = false;
         features = key_loc_curr.size();
-        std::cout << "Detected " << features << std::endl;
+        std::cout << "Detected " << features << " features\n";
     } else {
         next_bw = next_frame_bw.clone();
         key_loc_next.clear();
@@ -69,6 +69,7 @@ void ObjectTracker::detectAndMatch() {
                                obj_desc);
     detector->detectAndCompute(curr_bw, cv::noArray(), key_pnt_curr,
                                curr_frame_desc);
+    if (curr_frame_desc.empty()) throw (4);
     matcher->match(curr_frame_desc, obj_desc, matches);
 }
 
@@ -82,6 +83,7 @@ void ObjectTracker::purgeMatches() {
         key_loc_obj.push_back(key_pnt_obj[match.trainIdx].pt);
         key_loc_curr.push_back(key_pnt_curr[match.queryIdx].pt);
     }
+    if (key_loc_curr.size() < 10) throw (4);
     H = cv::findHomography(key_loc_obj, key_loc_curr,
                            cv::RANSAC, 4, mask);
     key_loc_obj.clear();

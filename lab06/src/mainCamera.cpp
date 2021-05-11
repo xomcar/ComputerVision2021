@@ -21,11 +21,18 @@ int main() {
     }
 
     // Read first frame of video
-    captureObj.read(curr_frame);
-    if (curr_frame.empty()) {
-        std::cerr << "Blank frame_bw grabbed\n";
-        return 1;
+    while (true) {
+        captureObj.read(curr_frame);
+        if (curr_frame.empty()) {
+            std::cerr << "Blank frame_bw grabbed\n";
+            return 1;
+        }
+        cv::imshow("Press a button when the object is in the frame", curr_frame);
+        if (cv::waitKey(5) >= 0)
+            break;
     }
+    cv::destroyAllWindows();
+
     cv::Mat curr_frame_bw;
     cv::cvtColor(curr_frame, curr_frame_bw, cv::COLOR_RGB2GRAY);
 
@@ -57,7 +64,12 @@ int main() {
         display = next_frame.clone();
         cv::cvtColor(next_frame, next_frame_bw, cv::COLOR_BGR2GRAY);
         for (auto& tracker : trackers) {
-            tracker.track(next_frame_bw, display);
+            try {
+                tracker.track(next_frame_bw, display);
+            } catch(...) {
+                std::cerr << "Not enough points, maybe objects exited the scene?" << std::endl;
+                return 1;
+            }
         }
         cv::imshow("Feed", display);
         if (cv::waitKey(5) >= 0)
