@@ -15,59 +15,29 @@
 
 class ObjectTracker {
 private:
-    // Private parameters
-    // Black and white image of object to track
-    cv::Mat obj_bw;
-    // Black and white images of track frame
-    cv::Mat frame_bw;
-    // Homography matrix to compute translation
-    cv::Mat H;
-    // Mask of matches for RANSAC
-    std::vector<uint8_t> match_mask;
-    // Color to assign to object
-    cv::Scalar color;
-    // Vector of keypoints in both obj image and track frame
-    std::vector<cv::KeyPoint> obj_keys, obj_keys_frame;
-    // Pointer to vector of keypoints in track frame (computed externally)
-    std::vector<cv::KeyPoint>* ext_frame_keys;
-    // Vector of descriptors for keypoints
-    cv::Mat obj_desc;
-    // Pointer to vector of descriptors in track frame (computed externally)
-    cv::Mat* ext_frame_desc;
-    // Vector of matches
+    cv::Mat obj_bw, curr_bw, next_bw;
+    cv::Mat obj_desc, curr_frame_desc;
+    std::vector<cv::Point2f> key_loc_obj, key_loc_curr, key_loc_next;
+    std::vector<cv::KeyPoint> key_pnt_obj, key_pnt_curr;
     std::vector<cv::DMatch> matches;
-    // Vectors for storing pixel locations of keypoints
-    std::vector<cv::Point2f> frame_points, obj_points;
-    // Vector storing coordinates of rectangle vertices
-    std::vector<cv::Point2f> rec = std::vector<cv::Point2f>(4);
-    // Matcher and detector objects
-    cv::Ptr<cv::SiftFeatureDetector> detector;
+    bool need_detect = true;
+    cv::Mat H, T;
+    cv::Ptr<cv::SIFT> detector;
     cv::Ptr<cv::BFMatcher> matcher;
-    // Ratio of exclusion in match distance
-    float ratio = 0.3;
+    float ratio;
+    size_t features = 0;
+    cv::Scalar color;
+    std::vector<uchar> mask, status;
+    std::vector<cv::Point2f> rec = std::vector<cv::Point2f>(4);
 
-    // Now for private functions
-    // Detect and match keypoints
     void detectAndMatch();
-    // Compute matches sanitization using RANSAC
     void purgeMatches();
-    // Draw keypoints on an image
     void drawKeypoints(cv::Mat& image);
-    // Draw rectangle on an image
     void drawRectangle(cv::Mat& image);
-    // Execute initialization
-    void initialize();
-
 public:
-    // Constructor
-    ObjectTracker(const cv::Mat& object_bw, cv::Mat& frame_bw, cv::Mat* frame_descriptors,
-                  std::vector<cv::KeyPoint>* frame_keypoints, cv::Scalar& color);
-    // Draws current keypoints and rectangle on an image
-    void draw(cv::Mat& image);
-    // Track movement using optical flow
-    void track(cv::Mat& next_frame);
-
+    ObjectTracker(const cv::Mat &frame_bw, const cv::Mat &object_bw,
+                  const float &ratio, const cv::Scalar& col);
+    void track(const cv::Mat &next_frame_bw, cv::Mat &output_image);
 };
-
 
 #endif //LAB06_OBJECTTRACKER_H

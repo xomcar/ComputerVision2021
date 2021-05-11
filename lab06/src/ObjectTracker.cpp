@@ -4,120 +4,107 @@
 
 #include "ObjectTracker.h"
 
-ObjectTracker::ObjectTracker(const cv::Mat& object_bw, cv::Mat& frame_bw, cv::Mat* frame_descriptors,
-                             std::vector<cv::KeyPoint>* frame_keypoints, cv::Scalar& col) {
+ObjectTracker::ObjectTracker(const cv::Mat& frame_bw, const cv::Mat& object_bw,
+                             const float& rat, const cv::Scalar& col) {
     obj_bw = object_bw;
-    frame_bw = frame_bw;
+    curr_bw = frame_bw;
     color = col;
-    ext_frame_desc = frame_descriptors;
-    ext_frame_keys = frame_keypoints;
-    // Initialize rectangle coordinates
     rec[0] = cv::Point2f(0, 0);
     rec[1] = cv::Point2f(0, obj_bw.rows);
     rec[2] = cv::Point2f(obj_bw.cols, obj_bw.rows);
     rec[3] = cv::Point2f(obj_bw.cols, 0);
     detector = cv::SIFT::create();
     matcher = cv::BFMatcher::create();
-    initialize();
+    ratio = rat;
+}
+
+void ObjectTracker::track(const cv::Mat &next_frame_bw, cv::Mat &output_image) {
+    if (need_detect) {
+        std::cout << "Computing detection..." << std::endl;
+        detectAndMatch();
+        purgeMatches();
+        need_detect = false;
+        features = key_loc_curr.size();
+        std::cout << "Detected " << features << std::endl;
+    } else {
+        next_bw = next_frame_bw.clone();
+        key_loc_next.clear();
+        cv::calcOpticalFlowPyrLK(curr_bw, next_bw, key_loc_curr,
+                                 key_loc_next, status, cv::noArray());
+        std::vector<cv::Point2f> curr_good, next_good;
+        int i = 0;
+        for (auto& point : key_loc_curr) {
+            if (status[i] == 1) {
+                curr_good.push_back(key_loc_curr[i]);
+                next_good.push_back(key_loc_next[i]);
+            }
+            i++;
+        }
+        if (curr_good.size() < features / 2) {
+            need_detect = true;
+            std::cout << "Need refinement, " << curr_good.size() << "/" << features << std::endl;
+        }
+
+        T = cv::estimateAffine2D(curr_good, next_good);
+        for (auto& ver : rec) {
+            cv::Vec3d pnt = {ver.x, ver.y, 1};
+            cv::Mat out = T * pnt;
+            ver.x = static_cast<float>(out.at<double>(0));
+            ver.y = static_cast<float>(out.at<double>(1));
+        }
+        key_loc_curr = std::move(next_good);
+    }
+    curr_bw = next_frame_bw.clone();
+    drawKeypoints(output_image);
+    drawRectangle(output_image);
 }
 
 void ObjectTracker::detectAndMatch() {
-    // Compute detection and matching
-    detector->detectAndCompute(obj_bw, cv::noArray(), obj_keys, obj_desc);
-    matcher->match(*ext_frame_desc, obj_desc, matches, cv::noArray());
+    key_pnt_obj.clear();
+    key_pnt_curr.clear();
+    curr_frame_desc.release();
+    obj_desc.release();
+    matches.clear();
+    detector->detectAndCompute(obj_bw, cv::noArray(), key_pnt_obj,
+                               obj_desc);
+    detector->detectAndCompute(curr_bw, cv::noArray(), key_pnt_curr,
+                               curr_frame_desc);
+    matcher->match(curr_frame_desc, obj_desc, matches);
 }
 
 void ObjectTracker::purgeMatches() {
-    // Discard matches according to distance
-    // Sort ascending matches
     std::sort(matches.begin(), matches.end());
-    // Save max distance
-    float max_dist = matches.back().distance;
-    // If a match is over the threshold, pop it out
+    auto max_dist = matches.back().distance;
     while (max_dist * ratio < matches.back().distance) {
         matches.pop_back();
     }
-    // Now save pixel coordinates of points
-    // Pick each match
-    for (auto match : matches) {
-        // Index of matched keypoint in frame keypoints
-        auto frame_idx = match.queryIdx;
-        // Index of matched keypoint in object keypoints
-        auto obj_idx = match.trainIdx;
-        // Save keypoints location
-        frame_points.push_back(ext_frame_keys->at(frame_idx).pt);
-        obj_points.push_back(obj_keys[obj_idx].pt);
+    for (auto& match : matches) {
+        key_loc_obj.push_back(key_pnt_obj[match.trainIdx].pt);
+        key_loc_curr.push_back(key_pnt_curr[match.queryIdx].pt);
     }
-    // Compute homography and cleanse using RANSAC
-    // Compute homography
-    H = cv::findHomography(obj_points, frame_points,
-                           cv::RANSAC, 4, match_mask);
+    H = cv::findHomography(key_loc_obj, key_loc_curr,
+                           cv::RANSAC, 4, mask);
+    key_loc_obj.clear();
+    key_loc_curr.clear();
     int i = 0;
-    // Empty the keypoints location
-    frame_points.clear();
-    obj_points.clear();
-    // Pick each match
-    for (auto match : matches) {
-        // If the match is not good for the RANSAC mask, skip
-        if (!match_mask[i++]) continue;
-        // Save both
-        auto frame_idx = match.queryIdx;
-        auto obj_idx = match.trainIdx;
-        frame_points.push_back(ext_frame_keys->at(frame_idx).pt);
-        obj_points.push_back(obj_keys[obj_idx].pt);
-        // Also save matched keypoints in track frame (for drawing)
-        obj_keys_frame.push_back(ext_frame_keys->at(frame_idx));
+    for (auto& match : matches) {
+        if (mask[i++] == 1) {
+            key_loc_obj.push_back(key_pnt_obj[match.trainIdx].pt);
+            key_loc_curr.push_back(key_pnt_curr[match.queryIdx].pt);
+        }
     }
-    // Move coordinates of rectangle according to homography
     cv::perspectiveTransform(rec, rec, H);
 }
 
-void ObjectTracker::drawKeypoints(cv::Mat &image) {
-    cv::drawKeypoints(frame_bw, obj_keys_frame,
-                      image, color, cv::DrawMatchesFlags::DRAW_OVER_OUTIMG);
+void ObjectTracker::drawKeypoints(cv::Mat& image) {
+    for (const auto& point : key_loc_curr) {
+        cv::circle(image, point, 4, color, 2);
+    }
 }
 
 void ObjectTracker::drawRectangle(cv::Mat &image) {
-    for (int i = 0; i < 3; i++) {
-        cv::line(image, rec[i], rec[i + 1], color, 3);
-    }
+    cv::line(image, rec[0], rec[1], color, 3);
+    cv::line(image, rec[1], rec[2], color, 3);
+    cv::line(image, rec[2], rec[3], color, 3);
     cv::line(image, rec[3], rec[0], color, 3);
-}
-
-void ObjectTracker::initialize() {
-    detectAndMatch();
-    purgeMatches();
-}
-
-void ObjectTracker::draw(cv::Mat &image) {
-    drawKeypoints(image);
-    drawRectangle(image);
-}
-
-void ObjectTracker::track(cv::Mat &next_frame) {
-    std::vector<uchar> status;
-    std::vector<cv::Point2f> next_frame_points;
-    cv::Mat next_bw;
-    cv::cvtColor(next_frame, next_bw, cv::COLOR_BGR2GRAY);
-    // Compute optical flow
-    cv::calcOpticalFlowPyrLK(frame_bw, next_bw, frame_points,
-                             next_frame_points, status, cv::noArray());
-    // Compute affine transformation between frames
-    cv::Mat T = cv::estimateAffine2D(frame_points, next_frame_points);
-    // Move rectangle
-    for (auto &vertex : rec) {
-        vertex.x += T.at<double>(0,2);
-        vertex.y += T.at<double>(1, 2);
-    }
-    // Move keypoints
-    for (auto &keypoint : obj_keys_frame) {
-        keypoint.pt.x += T.at<double>(0,2);
-        keypoint.pt.y += T.at<double>(1,2);
-    }
-    // Save the newfound points as current points
-    std::swap(frame_points, next_frame_points);
-    // Save new frame as current
-    frame_bw = next_bw;
-    // Draw keypoints and rectangles on next frame
-    draw(next_frame);
 }
